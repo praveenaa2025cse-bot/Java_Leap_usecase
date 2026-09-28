@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewer Grid - Telemetry</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Autonomous Grid</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="crawlers.html">Crawlers</a></li>
+            <li><a href="telemetry.html" class="active">Telemetry</a></li>
+            <li><a href="dredging.html">Dredging Runs</a></li>
+            <li><a href="invoices.html">Invoices</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar"><span>Telemetry Monitor</span></div>
+        <div class="content-area">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Sonar Telemetry Feed</h2>
+                    <button class="btn btn-accent" onclick="simulateTelemetry()">Simulate Telemetry Event</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Crawler</th>
+                            <th>Zone</th>
+                            <th>Timestamp</th>
+                            <th>Sediment %</th>
+                            <th>Blockage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="telemetryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadTelemetry() {
+            const res = await fetch('/api/sewer/telemetry');
+            if(res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('telemetryBody');
+                tbody.innerHTML = '';
+                data.forEach(t => {
+                    const row = `<tr>
+                        <td>${t.id}</td>
+                        <td>${t.crawler ? t.crawler.crawlerCode : 'N/A'}</td>
+                        <td>${t.zone ? t.zone.zoneName : 'N/A'}</td>
+                        <td>${t.timestamp}</td>
+                        <td style="${t.sedimentPercentage > 30 ? 'color: red; font-weight: bold;' : ''}">${t.sedimentPercentage}%</td>
+                        <td>${t.blockageDetected ? 'YES' : 'NO'}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        async function simulateTelemetry() {
+            const payload = {
+                crawler: { id: 1 },
+                zone: { id: 1 },
+                sedimentPercentage: Math.floor(Math.random() * 40) + 15, // 15 to 55
+                waterLevel: 2.5,
+                sonarDepth: 5.2
+            };
+            
+            await fetch('/api/sewer/telemetry', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            loadTelemetry();
+            alert("Telemetry submitted. Check Dredging Runs if sediment > 30%");
+        }
+        
+        loadTelemetry();
+    </script>
+</body>
+</html>

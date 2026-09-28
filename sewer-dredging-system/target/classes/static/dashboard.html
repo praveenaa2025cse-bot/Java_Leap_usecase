@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewer Grid - Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Autonomous Grid</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="crawlers.html">Crawlers</a></li>
+            <li><a href="telemetry.html">Telemetry</a></li>
+            <li><a href="dredging.html">Dredging Runs</a></li>
+            <li><a href="invoices.html">Invoices</a></li>
+            <li><a href="#" onclick="logout()">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <span>Welcome, <span id="userRole">User</span></span>
+        </div>
+        <div class="content-area">
+            <h2>Operations Overview</h2>
+            <br>
+            <div class="grid-cards">
+                <div class="stat-card">
+                    <div class="stat-title">Total Crawlers</div>
+                    <div class="stat-value" id="totCrawlers">-</div>
+                </div>
+                <div class="stat-card accent">
+                    <div class="stat-title">Available Crawlers</div>
+                    <div class="stat-value" id="availCrawlers">-</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-title">Crawlers Dredging</div>
+                    <div class="stat-value" id="dredgingCrawlers">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Sludge Removed (m³)</div>
+                    <div class="stat-value" id="totSludge">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('userRole').innerText = localStorage.getItem('role') || 'Admin';
+        
+        async function loadStats() {
+            const res = await fetch('/api/sewer/reports/dashboard');
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('totCrawlers').innerText = data.totalCrawlers;
+                document.getElementById('availCrawlers').innerText = data.availableCrawlers;
+                document.getElementById('dredgingCrawlers').innerText = data.dredgingCrawlers;
+                document.getElementById('totSludge').innerText = data.totalSludge.toFixed(2);
+            }
+        }
+        
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/login.html';
+        }
+        
+        loadStats();
+    </script>
+</body>
+</html>

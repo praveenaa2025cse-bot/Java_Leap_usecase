@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewer Grid - Crawlers</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Autonomous Grid</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="crawlers.html" class="active">Crawlers</a></li>
+            <li><a href="telemetry.html">Telemetry</a></li>
+            <li><a href="dredging.html">Dredging Runs</a></li>
+            <li><a href="invoices.html">Invoices</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar"><span>Crawler Fleet</span></div>
+        <div class="content-area">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Registered Crawlers</h2>
+                    <button class="btn btn-primary" onclick="addCrawler()">Register New Crawler</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Model</th>
+                            <th>Status</th>
+                            <th>Battery</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crawlerBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadCrawlers() {
+            const res = await fetch('/api/sewer/crawlers');
+            if(res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('crawlerBody');
+                tbody.innerHTML = '';
+                data.forEach(c => {
+                    const row = `<tr>
+                        <td>${c.crawlerCode}</td>
+                        <td>${c.crawlerName}</td>
+                        <td>${c.model}</td>
+                        <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
+                        <td>${c.batteryPercentage}%</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteCrawler(${c.id})">Remove</button>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        async function addCrawler() {
+            const code = prompt("Enter Crawler Code:", "CRAWLER-" + Math.floor(Math.random()*1000));
+            if(!code) return;
+            const payload = {
+                crawlerCode: code,
+                crawlerName: "Submersible " + code,
+                model: "MK-IV",
+                status: "AVAILABLE",
+                batteryPercentage: 100
+            };
+            await fetch('/api/sewer/crawlers', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            loadCrawlers();
+        }
+
+        async function deleteCrawler(id) {
+            if(confirm("Remove crawler?")) {
+                await fetch(`/api/sewer/crawlers/${id}`, {method: 'DELETE'});
+                loadCrawlers();
+            }
+        }
+        
+        loadCrawlers();
+    </script>
+</body>
+</html>

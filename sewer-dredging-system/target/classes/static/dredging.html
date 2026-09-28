@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewer Grid - Dredging Runs</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Autonomous Grid</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="crawlers.html">Crawlers</a></li>
+            <li><a href="telemetry.html">Telemetry</a></li>
+            <li><a href="dredging.html" class="active">Dredging Runs</a></li>
+            <li><a href="invoices.html">Invoices</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar"><span>Dredging Operations</span></div>
+        <div class="content-area">
+            <div class="card">
+                <h2>Active & Completed Runs</h2>
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Run #</th>
+                            <th>Crawler</th>
+                            <th>Status</th>
+                            <th>Sediment Before</th>
+                            <th>Sludge Removed</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="runsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadRuns() {
+            const res = await fetch('/api/sewer/dredging-runs');
+            if(res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('runsBody');
+                tbody.innerHTML = '';
+                data.forEach(r => {
+                    const actionBtn = r.status !== 'COMPLETED' ? 
+                        `<button class="btn btn-primary" onclick="completeRun(${r.id})">Complete</button>` : 
+                        `<button class="btn btn-accent" onclick="invoiceRun(${r.id})">Invoice</button>`;
+                        
+                    const row = `<tr>
+                        <td>${r.runNumber}</td>
+                        <td>${r.crawler ? r.crawler.crawlerCode : 'N/A'}</td>
+                        <td><span class="badge ${r.status.toLowerCase()}">${r.status}</span></td>
+                        <td>${r.sedimentBeforePercentage || 0}%</td>
+                        <td>${r.sludgeRemovedM3 || '-'} m³</td>
+                        <td>${actionBtn}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        async function completeRun(id) {
+            const m3 = prompt("Enter sludge removed in m³:", "125.5");
+            if(!m3) return;
+            const res = await fetch(`/api/sewer/dredging-runs/${id}/complete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sludgeRemovedM3: parseFloat(m3), sedimentAfterPercentage: 5.0 })
+            });
+            if(res.ok) loadRuns();
+        }
+        
+        async function invoiceRun(id) {
+            const customerId = prompt("Enter Customer ID to invoice (e.g. 1):", "1");
+            if(!customerId) return;
+            const rate = prompt("Enter rate per m³:", "500");
+            
+            const res = await fetch(`/api/sewer/invoices/generate?dredgingRunId=${id}&customerId=${customerId}&ratePerM3=${rate}`, {
+                method: 'POST'
+            });
+            if(res.ok) {
+                alert("Invoice generated successfully!");
+            } else {
+                alert("Failed or invoice already exists.");
+            }
+        }
+        
+        loadRuns();
+    </script>
+</body>
+</html>

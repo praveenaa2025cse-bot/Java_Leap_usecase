@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewer Grid - Invoices</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Autonomous Grid</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="crawlers.html">Crawlers</a></li>
+            <li><a href="telemetry.html">Telemetry</a></li>
+            <li><a href="dredging.html">Dredging Runs</a></li>
+            <li><a href="invoices.html" class="active">Invoices</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar"><span>Financial Billing</span></div>
+        <div class="content-area">
+            <div class="card">
+                <h2>Customer Invoices</h2>
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Customer ID</th>
+                            <th>Run Ref</th>
+                            <th>Date</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadInvoices() {
+            const res = await fetch('/api/sewer/invoices');
+            if(res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('invoiceBody');
+                tbody.innerHTML = '';
+                data.forEach(i => {
+                    const row = `<tr>
+                        <td>${i.invoiceNumber}</td>
+                        <td>${i.customer ? i.customer.id : 'N/A'}</td>
+                        <td>${i.dredgingRun ? i.dredgingRun.runNumber : 'N/A'}</td>
+                        <td>${i.invoiceDate}</td>
+                        <td>₹${i.total.toLocaleString()}</td>
+                        <td><span class="badge available">${i.status}</span></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        loadInvoices();
+    </script>
+</body>
+</html>
